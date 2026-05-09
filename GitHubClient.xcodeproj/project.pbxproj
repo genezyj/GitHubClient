@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		9C0000012FAF32AB00591A0A /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9B0000012FAF32AB00591A0A /* SnapKit */; };
+		9C0000022FAF32AB00591A0A /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 9B0000022FAF32AB00591A0A /* Kingfisher */; };
+		9C0000032FAF32AB00591A0A /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 9B0000032FAF32AB00591A0A /* KeychainAccess */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		417F40802FAF32AB00591A0A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -22,21 +28,6 @@
 			remoteInfo = GitHubClient;
 		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXBuildFile section */
-		9C0000012FAF32AB00591A0A /* SnapKit in Frameworks */ = {
-			isa = PBXBuildFile;
-			productRef = 9B0000012FAF32AB00591A0A /* SnapKit */;
-		};
-		9C0000022FAF32AB00591A0A /* Kingfisher in Frameworks */ = {
-			isa = PBXBuildFile;
-			productRef = 9B0000022FAF32AB00591A0A /* Kingfisher */;
-		};
-		9C0000032FAF32AB00591A0A /* KeychainAccess in Frameworks */ = {
-			isa = PBXBuildFile;
-			productRef = 9B0000032FAF32AB00591A0A /* KeychainAccess */;
-		};
-/* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		417F40722FAF32AA00591A0A /* GitHubClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GitHubClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -294,51 +285,6 @@
 			targetProxy = 417F408A2FAF32AB00591A0A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		9A0000012FAF32AB00591A0A /* XCRemoteSwiftPackageReference "SnapKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/SnapKit/SnapKit.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.7.0;
-			};
-		};
-		9A0000022FAF32AB00591A0A /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 8.0.0;
-			};
-		};
-		9A0000032FAF32AB00591A0A /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 4.2.2;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		9B0000012FAF32AB00591A0A /* SnapKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 9A0000012FAF32AB00591A0A /* XCRemoteSwiftPackageReference "SnapKit" */;
-			productName = SnapKit;
-		};
-		9B0000022FAF32AB00591A0A /* Kingfisher */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 9A0000022FAF32AB00591A0A /* XCRemoteSwiftPackageReference "Kingfisher" */;
-			productName = Kingfisher;
-		};
-		9B0000032FAF32AB00591A0A /* KeychainAccess */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 9A0000032FAF32AB00591A0A /* XCRemoteSwiftPackageReference "KeychainAccess" */;
-			productName = KeychainAccess;
-		};
-/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		417F40912FAF32AB00591A0A /* Debug */ = {
@@ -638,6 +584,51 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		9A0000012FAF32AB00591A0A /* XCRemoteSwiftPackageReference "SnapKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SnapKit/SnapKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.7.0;
+			};
+		};
+		9A0000022FAF32AB00591A0A /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
+		9A0000032FAF32AB00591A0A /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.2.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9B0000012FAF32AB00591A0A /* SnapKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9A0000012FAF32AB00591A0A /* XCRemoteSwiftPackageReference "SnapKit" */;
+			productName = SnapKit;
+		};
+		9B0000022FAF32AB00591A0A /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9A0000022FAF32AB00591A0A /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
+		};
+		9B0000032FAF32AB00591A0A /* KeychainAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9A0000032FAF32AB00591A0A /* XCRemoteSwiftPackageReference "KeychainAccess" */;
+			productName = KeychainAccess;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 417F406A2FAF32AA00591A0A /* Project object */;
 }

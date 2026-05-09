@@ -13,7 +13,7 @@ Storyboards). Core features align with **`PROJECT_SPEC.md`**; **login** follows
 - Authenticated profile (`GET /user` after OAuth)
 - Logout
 - Face ID / Touch ID local unlock for a previously saved **OAuth access token**
-- Secure Keychain storage for that token
+- Secure Keychain storage for that token (KeychainAccess)
 - Reusable avatar image component
 - Unified loading / empty / error states
 - Light & dark mode
@@ -22,29 +22,27 @@ Storyboards). Core features align with **`PROJECT_SPEC.md`**; **login** follows
 
 ## Tech Stack
 
-- Swift, UIKit (programmatic Auto Layout via `NSLayoutConstraint`)
+- Swift, UIKit — mostly programmatic Auto Layout (`NSLayoutConstraint`,
+  `UIStackView`); **Login** additionally uses [**SnapKit**](https://github.com/SnapKit/SnapKit) for constraints.
 - MVVM + lightweight composition root (`AppCoordinator`)
 - Native `URLSession` behind `APIClientProtocol`
 - **AuthenticationServices** — `ASWebAuthenticationSession` for GitHub OAuth; **CryptoKit** for PKCE (`code_verifier` / S256 `code_challenge`)
-- Native `Security` framework (`SecItem*`) behind `SecureStorageProtocol` (OAuth access token)
+- [**KeychainAccess**](https://github.com/kishikawakatsumi/KeychainAccess) behind `SecureStorageProtocol` — `KeychainSecureStorage` stores the OAuth token with `afterFirstUnlockThisDeviceOnly` (same intent as the previous `SecItem*` implementation).
+- [**Kingfisher**](https://github.com/onevcat/Kingfisher) — avatar URLs only, inside `AvatarImageView` (`kf.setImage` + cache/fade).
 - `LocalAuthentication` (`LAContext`) for biometrics (unlocks saved token only)
 - Custom URL scheme **`githubclient`** registered in `SupportingFiles/GitHubClient-Info.plist` for `githubclient://oauth/callback`
-- `XCTest` (`EndpointTests`, `GitHubRepositoryDecodingTests`, `SearchViewModelTests`, `AuthServiceTests` — see **Tests**)
+- Swift Package Manager: SnapKit, Kingfisher, KeychainAccess (`Package.resolved` under the `.xcodeproj` workspace shared data).
+- `XCTest` (`EndpointTests`, `GitHubRepositoryDecodingTests`, `SearchViewModelTests`, `AuthServiceTests`, `KeychainSecureStorageTests`, plus `GitHubClientTests` sanity — see **P1.4**) and **XCUITest** (P2.1).
 
-### Why no SnapKit / Kingfisher / KeychainAccess?
+### Spec libraries — targeted adoption
 
-The spec recommends those three SPM packages. To avoid risk to the existing
-`.xcodeproj` (and to keep the project free of network-dependent setup), this
-P0 implementation uses native equivalents:
+PROJECT_SPEC mentions SnapKit / Kingfisher / KeychainAccess. This codebase uses **only where it pays off**:
 
-| Spec recommendation | What this project uses                                                                  |
-| ------------------- | --------------------------------------------------------------------------------------- |
-| SnapKit             | Programmatic `NSLayoutConstraint` and `UIStackView`                                     |
-| Kingfisher          | A small `RemoteImageLoader` (`URLSession` + `NSCache`) hidden behind `AvatarImageView`  |
-| KeychainAccess      | Direct `Security` framework calls inside `KeychainSecureStorage`                        |
-
-The protocols (`SecureStorageProtocol`, etc.) are still in place, so swapping
-in the third-party packages later is a one-file change.
+| Package | Scope in this repo |
+| ------- | ------------------ |
+| **SnapKit** | `LoginViewController` layout only (`snp.makeConstraints`). Other screens remain UIKit constraints. |
+| **Kingfisher** | `AvatarImageView` only (list avatars + profile/detail). |
+| **KeychainAccess** | `KeychainSecureStorage.swift` only (`SecureStorageProtocol` unchanged for `AuthService` / tests). |
 
 ## Architecture
 
@@ -66,8 +64,8 @@ App
  │    ├── Profile/          — ProfileViewController + ProfileViewModel
  │    ├── Login/            — LoginViewController + LoginViewModel
  │    └── RepositoryDetail/ — RepositoryDetailViewController + RepositoryDetailViewModel  (P1.1)
- ├── UIComponents/        — AvatarImageView, RepositoryCardView, RepositoryListCell, StatBadgeView,
- │                          ErrorStateView, EmptyStateView, LoadingView, RemoteImageLoader
+ ├── UIComponents/        — AvatarImageView (Kingfisher), RepositoryCardView, RepositoryListCell, StatBadgeView,
+ │                          ErrorStateView, EmptyStateView, LoadingView
  └── Resources/zh-Hans.lproj/Localizable.strings
 ```
 
@@ -106,8 +104,9 @@ OAuth flow handled by `OAuthService` (`GitHubClient/Core/Auth/OAuthService.swift
 5. POST `code` + `code_verifier` (PKCE) + `client_id` + `client_secret` to
    `https://github.com/login/oauth/access_token`, parse the JSON token
    payload.
-6. Save the access token in the iOS Keychain
-   (`kSecClassGenericPassword`, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`).
+6. Save the access token via **KeychainAccess** in `KeychainSecureStorage`
+   (generic-password item scoped by bundle service id, accessibility
+   `afterFirstUnlockThisDeviceOnly`).
 7. Validate the token with `GET /user` and update the Profile UI.
 
 OAuth access-token handling:
@@ -215,8 +214,8 @@ iPhone Language → 简体中文`.
   are used.
 - Profile and Login content is constrained to a max width (~600–700pt) so
   iPad doesn't stretch text awkwardly.
-- All layouts use safe area + `UIStackView` + Auto Layout — no hardcoded
-  screen widths.
+- Most layouts use safe area + `UIStackView` + Auto Layout; **Login**
+  additionally uses SnapKit for the scroll / container / stack hierarchy.
 
 ## Completed (P0)
 
@@ -270,7 +269,7 @@ first page, clears the accumulator and pagination state, and the spinner
 hides as soon as the next non-loading state arrives.
 
 ### P1.4 Unit tests (XCTest)
-Replaced the auto-generated Swift Testing stub with four XCTest cases —
+Replaced the auto-generated Swift Testing stub with focused XCTest cases —
 deliberately minimal, just enough to demonstrate XCTest:
 
 - `EndpointTests` — verifies path / method / query items for repository
@@ -283,6 +282,11 @@ deliberately minimal, just enough to demonstrate XCTest:
 - `AuthServiceTests` — `restoreSession` with a valid stored token, no
   token, an invalid token (throws `.unauthorized`), and `logout` clearing
   the keychain + in-memory user.
+- `KeychainSecureStorageTests` — round-trip `save` / `read` / `delete` and
+  overwrite behavior against the real **KeychainAccess** stack, using a
+  unique `service` id per test so items never collide with the app’s
+  production key.
+- `GitHubClientTests` — `AppError` localized message smoke check.
 
 Mocks live in `GitHubClientTests/Mocks/TestMocks.swift`. Tests run from
 the IDE (`⌘U`) or from CLI:
@@ -315,7 +319,7 @@ Added `StatBadgeView` (icon + value pill) and refactored
 reusable components is now:
 
 ```
-AvatarImageView
+AvatarImageView      (Kingfisher for remote images)
 RepositoryCardView   (consumed by Home + Search list cells and the detail header)
 StatBadgeView        (consumed by RepositoryCardView and RepositoryDetailViewController)
 ErrorStateView
@@ -325,9 +329,9 @@ LoadingView
 
 ## Known Limitations
 
-- The three recommended SPM packages (SnapKit, Kingfisher, KeychainAccess)
-  are intentionally swapped for native equivalents to keep the existing
-  `.xcodeproj` un-touched in P0. See "Why no SnapKit…" above.
+- SnapKit / Kingfisher / KeychainAccess are used in **narrow** places only
+  (login layout, avatar loading, token storage); the rest of the UI and
+  networking is still vanilla UIKit + `URLSession`.
 - **`clientSecret` in the app bundle** — a native binary cannot keep a OAuth
   client secret truly private. This project exchanges the authorization code
   on-device per `OAUTH_SPEC.md`; production builds should proxy that POST

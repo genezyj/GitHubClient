@@ -2,17 +2,17 @@
 //  AvatarImageView.swift
 //  GitHubClient
 //
-//  Reusable circular avatar component. All remote image loading is funneled
-//  through this view so business code never touches the URL session directly.
+//  Reusable circular avatar component. Remote loading uses Kingfisher; callers
+//  still depend only on `configure(url:size:)`.
 //
 
+import Kingfisher
 import UIKit
 
 final class AvatarImageView: UIView {
 
     private let imageView = UIImageView()
-    private var currentTask: URLSessionDataTask?
-    private var currentURL: URL?
+    private var configuredURL: URL?
 
     private let placeholder: UIImage = {
         let config = UIImage.SymbolConfiguration(pointSize: 28, weight: .regular)
@@ -57,30 +57,34 @@ final class AvatarImageView: UIView {
     /// responsible for providing layout constraints; `size` is used purely
     /// for the corner-radius pre-calculation.
     func configure(url: URL?, size: CGFloat) {
-        currentTask?.cancel()
-        currentTask = nil
-        currentURL = url
-
+        configuredURL = url
         imageView.layer.cornerRadius = size / 2.0
-        imageView.image = placeholder
+        imageView.kf.cancelDownloadTask()
 
-        guard let url else { return }
-
-        if let cached = RemoteImageLoader.shared.cachedImage(for: url) {
-            imageView.image = cached
+        guard let url else {
+            imageView.image = placeholder
             return
         }
 
-        currentTask = RemoteImageLoader.shared.loadImage(from: url) { [weak self] image in
-            guard let self, self.currentURL == url else { return }
-            self.imageView.image = image ?? self.placeholder
-        }
+        imageView.kf.setImage(
+            with: url,
+            placeholder: placeholder,
+            options: [
+                .transition(.fade(0.15)),
+                .cacheOriginalImage
+            ],
+            completionHandler: { [weak self] result in
+                guard let self else { return }
+                if case .failure = result, self.configuredURL == url {
+                    self.imageView.image = self.placeholder
+                }
+            }
+        )
     }
 
     func reset() {
-        currentTask?.cancel()
-        currentTask = nil
-        currentURL = nil
+        configuredURL = nil
+        imageView.kf.cancelDownloadTask()
         imageView.image = placeholder
     }
 }

@@ -17,3 +17,6 @@ xcuserdata/
 # Playgrounds
 timeline.xctimeline
 playground.xcworkspace
+
+# Spec
+*_SPEC.md

@@ -4,6 +4,7 @@
 //
 
 import AuthenticationServices
+import SnapKit
 import UIKit
 
 final class LoginViewController: UIViewController {
@@ -59,39 +60,30 @@ final class LoginViewController: UIViewController {
     }
 
     private func setupViews() {
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
 
         let container = UIView()
-        container.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(container)
-        let widthConstraint = container.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
-        widthConstraint.priority = .defaultHigh
-        NSLayoutConstraint.activate([
-            container.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            container.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            container.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            widthConstraint,
-            container.widthAnchor.constraint(lessThanOrEqualToConstant: 600)
-        ])
+        container.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.width.equalTo(scrollView.snp.width).priority(.high)
+            make.width.lessThanOrEqualTo(600)
+            make.centerX.equalToSuperview()
+        }
 
         contentStack.axis = .vertical
         contentStack.spacing = 16
         contentStack.alignment = .fill
-        contentStack.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(contentStack)
-        NSLayoutConstraint.activate([
-            contentStack.topAnchor.constraint(equalTo: container.topAnchor, constant: 32),
-            contentStack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 24),
-            contentStack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -24),
-            contentStack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -24)
-        ])
+        contentStack.snp.makeConstraints { make in
+            make.top.equalToSuperview().inset(32)
+            make.leading.trailing.equalToSuperview().inset(24)
+            make.bottom.equalToSuperview().inset(24)
+        }
 
         titleLabel.text = L10n.loginHeadline
         titleLabel.font = .preferredFont(forTextStyle: .title2)
@@ -105,9 +97,10 @@ final class LoginViewController: UIViewController {
         } else {
             signInButton.setTitle(L10n.loginSignInWithGitHub, for: .normal)
         }
-        signInButton.translatesAutoresizingMaskIntoConstraints = false
         signInButton.addTarget(self, action: #selector(didTapSignIn), for: .touchUpInside)
-        signInButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 50).isActive = true
+        signInButton.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(50)
+        }
 
         noteLabel.text = L10n.loginNoteOAuth
         noteLabel.font = .preferredFont(forTextStyle: .footnote)

@@ -2,97 +2,53 @@
 //  KeychainSecureStorage.swift
 //  GitHubClient
 //
-//  Wraps the system Keychain (Security framework) so the rest of the app
-//  never touches `SecItem*` directly. We deliberately use the platform API
-//  rather than a third-party wrapper to keep the project free of extra SPM
-//  packages and to avoid signing surprises.
+//  OAuth token storage behind `SecureStorageProtocol`, implemented with the
+//  KeychainAccess library (same semantics as before: generic password scoped
+//  by bundle service id + fixed account key, `afterFirstUnlockThisDeviceOnly`).
 //
 
 import Foundation
-import Security
+import KeychainAccess
 
 enum SecureStorageError: Error {
-    case unexpectedStatus(OSStatus)
-    case encodingFailed
+    /// Wraps failures from KeychainAccess / Security framework.
+    case keychainUnderlying(Error)
 }
 
 final class KeychainSecureStorage: SecureStorageProtocol {
 
-    private let service: String
     private let account: String
+    private let keychain: Keychain
 
     init(
         service: String = Bundle.main.bundleIdentifier ?? "com.githubclient.keychain",
         account: String = "github.access.token"
     ) {
-        self.service = service
         self.account = account
+        self.keychain = Keychain(service: service).accessibility(.afterFirstUnlockThisDeviceOnly)
     }
 
     func saveToken(_ token: String) throws {
-        guard let data = token.data(using: .utf8) else {
-            throw SecureStorageError.encodingFailed
+        do {
+            try keychain.set(token, key: account)
+        } catch {
+            throw SecureStorageError.keychainUnderlying(error)
         }
-
-        let baseQuery: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account
-        ]
-
-        let attributes: [String: Any] = [
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        ]
-
-        // Try update first, then add if missing.
-        let updateStatus = SecItemUpdate(baseQuery as CFDictionary, attributes as CFDictionary)
-        if updateStatus == errSecSuccess { return }
-        if updateStatus == errSecItemNotFound {
-            var insertQuery = baseQuery
-            insertQuery.merge(attributes) { _, new in new }
-            let addStatus = SecItemAdd(insertQuery as CFDictionary, nil)
-            guard addStatus == errSecSuccess else {
-                throw SecureStorageError.unexpectedStatus(addStatus)
-            }
-            return
-        }
-        throw SecureStorageError.unexpectedStatus(updateStatus)
     }
 
     func readToken() throws -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne
-        ]
-
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        switch status {
-        case errSecSuccess:
-            guard let data = item as? Data, let token = String(data: data, encoding: .utf8) else {
-                return nil
-            }
-            return token
-        case errSecItemNotFound:
-            return nil
-        default:
-            throw SecureStorageError.unexpectedStatus(status)
+        do {
+            return try keychain.get(account)
+        } catch {
+            throw SecureStorageError.keychainUnderlying(error)
         }
     }
 
     func deleteToken() throws {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account
-        ]
-        let status = SecItemDelete(query as CFDictionary)
-        if status != errSecSuccess && status != errSecItemNotFound {
-            throw SecureStorageError.unexpectedStatus(status)
+        do {
+            try keychain.remove(account)
+        } catch {
+            throw SecureStorageError.keychainUnderlying(error)
         }
     }
 }
