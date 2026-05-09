@@ -1,0 +1,55 @@
+/*
+  Localizable.strings (zh-Hans)
+  GitHubClient
+*/
+
+"tab.home" = "首页";
+"tab.search" = "搜索";
+"tab.profile" = "我的";
+
+"home.title" = "热门 Swift 仓库";
+
+"search.title" = "搜索";
+"search.placeholder" = "搜索 GitHub 仓库";
+"search.initial_empty" = "请输入关键词搜索仓库";
+"search.no_results" = "没有找到相关仓库";
+
+"profile.not_logged_in" = "未登录";
+"profile.login_with_github" = "使用 GitHub 登录";
+"profile.login_with_biometrics" = "使用 Face ID / Touch ID 登录";
+"profile.logout" = "退出登录";
+"profile.logout_confirm_title" = "确认退出登录？";
+"profile.logout_confirm_message" = "退出后仍可继续浏览公开内容。";
+"profile.login_hint" = "登录后可查看你的 GitHub 个人资料。";
+"profile.repos" = "公开仓库";
+"profile.followers" = "粉丝";
+"profile.following" = "关注中";
+
+"login.title" = "登录 GitHub";
+"login.headline" = "使用你的 GitHub 账号登录";
+"login.sign_in_with_github" = "使用 GitHub 登录";
+"login.note_oauth" = "登录时会跳转到 GitHub 官方授权页面，App 不会获取你的密码。授权完成后 Token 会安全存储在系统 Keychain 中。";
+"login.missing_credentials" = "OAuth 凭据未配置：请在 OAuthConfig.swift 中填写你自己的 GitHub OAuth Client ID / Secret，详见 README。";
+"login.biometric_reason" = "使用生物识别解锁已保存的登录";
+
+"common.cancel" = "取消";
+"common.confirm" = "确认";
+"common.ok" = "好";
+
+"error.title" = "出现问题";
+"error.network" = "网络连接失败，请稍后重试";
+"error.unauthorized" = "登录凭证无效，请重新登录";
+"error.rate_limit" = "请求过于频繁，请稍后再试";
+"error.not_found" = "未找到相关内容";
+"error.server" = "服务器暂时不可用，请稍后再试";
+"error.unknown" = "发生未知错误";
+"error.retry" = "重试";
+"error.oauth_cancelled" = "登录已取消";
+"error.oauth_callback" = "GitHub 授权回调无效，请重试";
+"error.token_exchange" = "Token 兑换失败，请检查 OAuth 配置后重试";
+"error.biometric_unavailable" = "当前设备不支持或未启用 Face ID / Touch ID";
+"error.biometric_failed" = "生物识别失败，请重试";
+
+"repo.stars" = "星标";
+"repo.forks" = "Fork";
+"repo.updated" = "更新";

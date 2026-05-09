@@ -187,11 +187,12 @@
 				};
 			};
 			buildConfigurationList = 417F406D2FAF32AA00591A0A /* Build configuration list for PBXProject "GitHubClient" */;
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
 			);
 			mainGroup = 417F40692FAF32AA00591A0A;
 			minimizedProjectReferenceProxies = 1;
@@ -400,7 +401,10 @@
 				DEVELOPMENT_TEAM = 69UN56WSCN;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_FILE = "SupportingFiles/GitHubClient-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = GitHubClient;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "用于在已登录后通过 Face ID 解锁你的 GitHub 登录。";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -428,7 +432,10 @@
 				DEVELOPMENT_TEAM = 69UN56WSCN;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_FILE = "SupportingFiles/GitHubClient-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = GitHubClient;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "用于在已登录后通过 Face ID 解锁你的 GitHub 登录。";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
