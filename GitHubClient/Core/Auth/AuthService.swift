@@ -71,3 +71,19 @@ final class AuthService: AuthServiceProtocol {
 extension Notification.Name {
     static let authStateDidChange = Notification.Name("AuthStateDidChange")
 }
+
+// MARK: - UI Testing (XCUITest mock login)
+
+extension AuthService {
+    /// Installs a deterministic user + synthetic token — only when launched with
+    /// `-uitesting -uitesting_mock_login`. Used by `LoginViewController`; never calls GitHub.
+    func completeUITestingMockSignIn() throws {
+        guard UITestingConfiguration.enableMockLoginEntryPoint else {
+            throw AppError.unknown
+        }
+        let user = try UITestingConfiguration.makeMockGitHubUser()
+        try storage.saveToken(UITestingConfiguration.mockAccessToken)
+        currentUser = user
+        NotificationCenter.default.post(name: .authStateDidChange, object: nil)
+    }
+}

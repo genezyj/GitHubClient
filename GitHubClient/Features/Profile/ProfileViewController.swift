@@ -216,6 +216,10 @@ final class ProfileViewController: UIViewController {
 
         primaryButton.isHidden = false
         primaryButton.setTitle(L10n.profileLoginWithGitHub, for: .normal)
+        if UITestingConfiguration.isRunningUITests {
+            primaryButton.accessibilityIdentifier = UITestingAccessibilityID.profileLoginGitHub
+            logoutButton.accessibilityIdentifier = nil
+        }
 
         secondaryButton.isHidden = !canUseBiometrics
         secondaryButton.setTitle(L10n.profileLoginWithBiometrics, for: .normal)
@@ -253,6 +257,10 @@ final class ProfileViewController: UIViewController {
         secondaryButton.isHidden = true
         logoutButton.isHidden = false
         logoutButton.setTitle(L10n.profileLogout, for: .normal)
+        if UITestingConfiguration.isRunningUITests {
+            logoutButton.accessibilityIdentifier = UITestingAccessibilityID.profileLogout
+            primaryButton.accessibilityIdentifier = nil
+        }
         hintLabel.isHidden = true
     }
 

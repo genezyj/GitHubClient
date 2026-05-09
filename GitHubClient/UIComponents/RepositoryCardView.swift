@@ -15,8 +15,8 @@ final class RepositoryCardView: UIView {
     private let ownerLabel = UILabel()
     private let descriptionLabel = UILabel()
     private let languageLabel = UILabel()
-    private let starsLabel = UILabel()
-    private let forksLabel = UILabel()
+    private let starsBadge = StatBadgeView()
+    private let forksBadge = StatBadgeView()
     private let updatedLabel = UILabel()
     private let metadataStack = UIStackView()
 
@@ -45,7 +45,7 @@ final class RepositoryCardView: UIView {
         descriptionLabel.textColor = .secondaryLabel
         descriptionLabel.numberOfLines = 3
 
-        for label in [languageLabel, starsLabel, forksLabel, updatedLabel] {
+        for label in [languageLabel, updatedLabel] {
             label.font = .preferredFont(forTextStyle: .caption1)
             label.textColor = .tertiaryLabel
         }
@@ -54,8 +54,8 @@ final class RepositoryCardView: UIView {
         metadataStack.spacing = 12
         metadataStack.alignment = .center
         metadataStack.distribution = .fill
-        for label in [languageLabel, starsLabel, forksLabel, updatedLabel] {
-            metadataStack.addArrangedSubview(label)
+        for view in [languageLabel, starsBadge, forksBadge, updatedLabel] {
+            metadataStack.addArrangedSubview(view)
         }
         metadataStack.addArrangedSubview(UIView())
 
@@ -96,8 +96,11 @@ final class RepositoryCardView: UIView {
         descriptionLabel.isHidden = (repo.description?.isEmpty ?? true)
         languageLabel.text = repo.language.map { "● \($0)" }
         languageLabel.isHidden = (repo.language == nil)
-        starsLabel.text = "★ \(CompactNumberFormatter.string(from: repo.stargazersCount))"
-        forksLabel.text = "⑂ \(CompactNumberFormatter.string(from: repo.forksCount))"
+        starsBadge.configure(systemImage: "star.fill",
+                             value: CompactNumberFormatter.string(from: repo.stargazersCount),
+                             tint: .systemYellow)
+        forksBadge.configure(systemImage: "tuningfork",
+                             value: CompactNumberFormatter.string(from: repo.forksCount))
         if let updated = repo.updatedAt {
             updatedLabel.text = "\(L10n.repoUpdated) \(RelativeDateFormatterUtil.string(from: updated))"
             updatedLabel.isHidden = false
@@ -113,8 +116,6 @@ final class RepositoryCardView: UIView {
         ownerLabel.text = nil
         descriptionLabel.text = nil
         languageLabel.text = nil
-        starsLabel.text = nil
-        forksLabel.text = nil
         updatedLabel.text = nil
     }
 }

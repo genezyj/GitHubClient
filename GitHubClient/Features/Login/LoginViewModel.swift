@@ -47,4 +47,17 @@ final class LoginViewModel {
     var hasOAuthCredentials: Bool {
         return !OAuthConfig.isPlaceholderCredentialed
     }
+
+    /// XCUITest-only path: persists a fixture `GitHubUser` via `AuthService`
+    /// when `-uitesting -uitesting_mock_login` is present.
+    func signInUsingUITestingMock() throws {
+        guard let concreteAuth = authService as? AuthService else {
+            throw AppError.unknown
+        }
+        try concreteAuth.completeUITestingMockSignIn()
+        guard let user = authService.currentUser else {
+            throw AppError.unknown
+        }
+        state = .loaded(user)
+    }
 }

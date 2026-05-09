@@ -29,7 +29,7 @@ Storyboards). Core features align with **`PROJECT_SPEC.md`**; **login** follows
 - Native `Security` framework (`SecItem*`) behind `SecureStorageProtocol` (OAuth access token)
 - `LocalAuthentication` (`LAContext`) for biometrics (unlocks saved token only)
 - Custom URL scheme **`githubclient`** registered in `SupportingFiles/GitHubClient-Info.plist` for `githubclient://oauth/callback`
-- `XCTest` (existing target — additional tests are P1, not yet added)
+- `XCTest` (`EndpointTests`, `GitHubRepositoryDecodingTests`, `SearchViewModelTests`, `AuthServiceTests` — see **Tests**)
 
 ### Why no SnapKit / Kingfisher / KeychainAccess?
 
@@ -61,11 +61,12 @@ App
  │    ├── State/          — ViewState<Value>
  │    └── Utilities/      — L10n, Formatters
  ├── Features/
- │    ├── Home/           — HomeViewController + HomeViewModel
- │    ├── Search/         — SearchViewController + SearchViewModel
- │    ├── Profile/        — ProfileViewController + ProfileViewModel
- │    └── Login/          — LoginViewController + LoginViewModel
- ├── UIComponents/        — AvatarImageView, RepositoryCardView, RepositoryListCell,
+ │    ├── Home/             — HomeViewController + HomeViewModel
+ │    ├── Search/           — SearchViewController + SearchViewModel
+ │    ├── Profile/          — ProfileViewController + ProfileViewModel
+ │    ├── Login/            — LoginViewController + LoginViewModel
+ │    └── RepositoryDetail/ — RepositoryDetailViewController + RepositoryDetailViewModel  (P1.1)
+ ├── UIComponents/        — AvatarImageView, RepositoryCardView, RepositoryListCell, StatBadgeView,
  │                          ErrorStateView, EmptyStateView, LoadingView, RemoteImageLoader
  └── Resources/zh-Hans.lproj/Localizable.strings
 ```
@@ -236,6 +237,92 @@ iPhone Language → 简体中文`.
 - Light/Dark mode via system colors.
 - iPhone & iPad layouts.
 
+## Completed (P1.1 – P1.6)
+
+### P1.1 Repository Detail page
+Tapping a row on Home or Search pushes
+`RepositoryDetailViewController`. The screen renders the model that was
+already in memory, then `RepositoryDetailViewModel` fires
+`GET /repos/{owner}/{repo}` to refresh fields the search payload omits
+(notably `open_issues_count` and `topics`). Open-issues and topics show
+when present; an **Open in GitHub** button opens the `html_url` in
+`SFSafariViewController`. Errors keep the cached row visible rather than
+blanking the UI.
+
+### P1.2 Pagination
+`HomeViewModel` and `SearchViewModel` both track:
+
+```swift
+private(set) var currentPage: Int
+private(set) var isLoadingNextPage: Bool
+private(set) var hasMore: Bool
+```
+
+`loadNextPageIfNeeded()` is invoked from
+`tableView(_:willDisplay:forRowAt:)` when the row index is within the
+last 5. Duplicate IDs are filtered. A bottom `UIActivityIndicatorView`
+appears as `tableFooterView` while the next page is in flight, and the
+list stops paginating once the API returns fewer items than `pageSize`.
+
+### P1.3 Pull to refresh
+`UIRefreshControl` is wired on both Home and Search. Pulling reloads the
+first page, clears the accumulator and pagination state, and the spinner
+hides as soon as the next non-loading state arrives.
+
+### P1.4 Unit tests (XCTest)
+Replaced the auto-generated Swift Testing stub with four XCTest cases —
+deliberately minimal, just enough to demonstrate XCTest:
+
+- `EndpointTests` — verifies path / method / query items for repository
+  search and detail endpoints.
+- `GitHubRepositoryDecodingTests` — round-trips sample JSON through
+  `JSONDecoder` (snake_case → camelCase, ISO-8601 dates, optional fields).
+- `SearchViewModelTests` — `loading → loaded` happy path,
+  `loading → error` failure path, and empty-query reset, all driven by a
+  mock `GitHubServiceProtocol`.
+- `AuthServiceTests` — `restoreSession` with a valid stored token, no
+  token, an invalid token (throws `.unauthorized`), and `logout` clearing
+  the keychain + in-memory user.
+
+Mocks live in `GitHubClientTests/Mocks/TestMocks.swift`. Tests run from
+the IDE (`⌘U`) or from CLI:
+
+```bash
+xcodebuild -project GitHubClient.xcodeproj \
+  -scheme GitHubClient \
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+  -only-testing:GitHubClientTests test
+```
+
+### P1.5 Capability / Entitlement
+Enabled **Keychain Sharing** as the demonstration capability. The
+entitlement file is `SupportingFiles/GitHubClient.entitlements` (kept
+outside the synced source group so it isn't copied into the bundle as a
+resource) and is wired through `CODE_SIGN_ENTITLEMENTS`. The access
+group is `$(AppIdentifierPrefix)$(CFBundleIdentifier)` — i.e. the app's
+own default group, so `KeychainSecureStorage` does **not** need to set
+`kSecAttrAccessGroup` at runtime and behavior is identical to before.
+
+If automatic signing on a different team rejects this entitlement,
+remove the `CODE_SIGN_ENTITLEMENTS` line from both Debug and Release
+configurations of the `GitHubClient` target — the Keychain still works
+because items default to the app's own access group. Per
+`PROJECT_SPEC.md` §P1.5, signing problems should not block the project.
+
+### P1.6 Custom components
+Added `StatBadgeView` (icon + value pill) and refactored
+`RepositoryCardView` to use it for stars and forks. The full set of
+reusable components is now:
+
+```
+AvatarImageView
+RepositoryCardView   (consumed by Home + Search list cells and the detail header)
+StatBadgeView        (consumed by RepositoryCardView and RepositoryDetailViewController)
+ErrorStateView
+EmptyStateView
+LoadingView
+```
+
 ## Known Limitations
 
 - The three recommended SPM packages (SnapKit, Kingfisher, KeychainAccess)
@@ -245,21 +332,14 @@ iPhone Language → 简体中文`.
   client secret truly private. This project exchanges the authorization code
   on-device per `OAUTH_SPEC.md`; production builds should proxy that POST
   through a backend (same note under **Production caveat** in **Login Method**).
-- Repository detail page, pagination, pull-to-refresh, mock mode, and
-  expanded XCTest coverage are P1 in the original `PROJECT_SPEC.md` and **are not implemented** here.
+- Mock mode (P1.7), expanded P1.8 components, and the P2 items in
+  `PROJECT_SPEC.md` are **not implemented** in this milestone.
 - TestFlight distribution is not included. The app can be archived and
   uploaded with a valid Apple Developer account.
 
-## Future Improvements (P1 / P2 from the spec)
+## Future Improvements (remaining P1 / P2 from the spec)
 
-- Repository detail page (`GET /repos/{owner}/{repo}`).
-- Pagination on Home and Search.
-- `UIRefreshControl` pull-to-refresh.
-- XCTest unit tests: `EndpointTests`, `GitHubRepositoryDecodingTests`,
-  `SearchViewModelTests`, `AuthServiceTests`.
-- Mock mode behind `-useMockData` launch argument.
-- `RepositoryCardView` already exists; can promote `StatBadgeView` and other
-  small components.
-- XCUITest UI tests on top of mock mode.
+- Mock mode behind `-useMockData` launch argument (P1.7).
+- XCUITest UI tests layered on top of that mock mode.
 - Backend proxy for OAuth token exchange (hide `clientSecret` from clients).
 - Optional offline cache of last-loaded results.

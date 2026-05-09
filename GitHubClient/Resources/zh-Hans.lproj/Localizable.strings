@@ -53,3 +53,7 @@
 "repo.stars" = "星标";
 "repo.forks" = "Fork";
 "repo.updated" = "更新";
+
+"detail.created" = "创建";
+"detail.no_description" = "暂无简介";
+"detail.open_on_github" = "在 GitHub 中打开";

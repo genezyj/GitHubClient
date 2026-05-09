@@ -30,6 +30,18 @@ final class MainTabBarController: UITabBarController {
         view.backgroundColor = .systemBackground
         viewControllers = [makeHomeTab(), makeSearchTab(), makeProfileTab()]
         tabBar.tintColor = .label
+
+        // XCUITest targets these identifiers; normal installs never pass `-uitesting`.
+        if UITestingConfiguration.isRunningUITests {
+            applyUITestingTabAccessibilityIdentifiers()
+        }
+    }
+
+    private func applyUITestingTabAccessibilityIdentifiers() {
+        guard let tabItems = tabBar.items, tabItems.count >= 3 else { return }
+        tabItems[0].accessibilityIdentifier = UITestingAccessibilityID.tabHome
+        tabItems[1].accessibilityIdentifier = UITestingAccessibilityID.tabSearch
+        tabItems[2].accessibilityIdentifier = UITestingAccessibilityID.tabProfile
     }
 
     private func makeHomeTab() -> UINavigationController {
@@ -37,6 +49,9 @@ final class MainTabBarController: UITabBarController {
         let vc = HomeViewController(viewModel: viewModel)
         vc.title = L10n.homeTitle
         let nav = UINavigationController(rootViewController: vc)
+        vc.onSelectRepository = { [weak nav, gitHubService] repo in
+            nav?.pushViewController(Self.makeDetailVC(for: repo, service: gitHubService), animated: true)
+        }
         nav.tabBarItem = UITabBarItem(
             title: L10n.tabHome,
             image: UIImage(systemName: "house"),
@@ -51,6 +66,9 @@ final class MainTabBarController: UITabBarController {
         let vc = SearchViewController(viewModel: viewModel)
         vc.title = L10n.searchTitle
         let nav = UINavigationController(rootViewController: vc)
+        vc.onSelectRepository = { [weak nav, gitHubService] repo in
+            nav?.pushViewController(Self.makeDetailVC(for: repo, service: gitHubService), animated: true)
+        }
         nav.tabBarItem = UITabBarItem(
             title: L10n.tabSearch,
             image: UIImage(systemName: "magnifyingglass"),
@@ -58,6 +76,14 @@ final class MainTabBarController: UITabBarController {
         )
         nav.navigationBar.prefersLargeTitles = true
         return nav
+    }
+
+    private static func makeDetailVC(
+        for repository: GitHubRepository,
+        service: GitHubServiceProtocol
+    ) -> RepositoryDetailViewController {
+        let vm = RepositoryDetailViewModel(repository: repository, service: service)
+        return RepositoryDetailViewController(viewModel: vm)
     }
 
     private func makeProfileTab() -> UINavigationController {

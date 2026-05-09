@@ -55,6 +55,7 @@ final class LoginViewController: UIViewController {
         setupViews()
         bindViewModel()
         showCredentialWarningIfNeeded()
+        addUITestingMockLoginButtonIfNeeded()
     }
 
     private func setupViews() {
@@ -176,5 +177,27 @@ final class LoginViewController: UIViewController {
 
     @objc private func didTapCancel() {
         dismiss(animated: true)
+    }
+
+    private func addUITestingMockLoginButtonIfNeeded() {
+        guard UITestingConfiguration.enableMockLoginEntryPoint else { return }
+        let item = UIBarButtonItem(
+            title: "Mock",
+            style: .plain,
+            target: self,
+            action: #selector(didTapUITestingMockLogin)
+        )
+        item.accessibilityIdentifier = UITestingAccessibilityID.loginMockSignIn
+        navigationItem.rightBarButtonItem = item
+    }
+
+    @objc private func didTapUITestingMockLogin() {
+        do {
+            try viewModel.signInUsingUITestingMock()
+            // Success path: `render(.loaded)` from `bindViewModel` calls `onDidLogin`.
+        } catch {
+            errorLabel.text = (error as? AppError)?.localizedMessage ?? AppError.unknown.localizedMessage
+            errorLabel.isHidden = false
+        }
     }
 }

@@ -2,40 +2,119 @@
 //  GitHubClientUITests.swift
 //  GitHubClientUITests
 //
-//  Created by Gene Zhang on 5/9/26.
+//  P2.1 — scenario coverage with stable `accessibilityIdentifier` hooks
+//  (only applied in the app when `-uitesting` is passed on launch).
+//
+//  Search + Home cases call the live GitHub API and require network access.
 //
 
 import XCTest
 
+/// Mirrors `UITestingAccessibilityID` in the app target (test bundle cannot import it).
+private enum A11y {
+    static let tabHome = "uitest.tab.home"
+    static let tabSearch = "uitest.tab.search"
+    static let tabProfile = "uitest.tab.profile"
+    static let homeRepositoryList = "uitest.home.repository_list"
+    static let searchRepositoryList = "uitest.search.repository_list"
+    static let searchQueryField = "uitest.search.query"
+    static let profileLoginGitHub = "uitest.profile.login_github"
+    static let profileLogout = "uitest.profile.logout"
+    static let loginMockSignIn = "uitest.login.mock_sign_in"
+}
+
 final class GitHubClientUITests: XCTestCase {
 
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    private func configureApp(_ app: XCUIApplication, resetKeychain: Bool = true, mockLoginEntry: Bool = false) {
+        app.launchArguments = ["-uitesting"]
+        if resetKeychain { app.launchArguments.append("-uitesting_reset_keychain") }
+        if mockLoginEntry { app.launchArguments.append("-uitesting_mock_login") }
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testLaunch_withoutLogin_homeListVisible() throws {
         let app = XCUIApplication()
+        configureApp(app, resetKeychain: true, mockLoginEntry: false)
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        let table = app.tables[A11y.homeRepositoryList]
+        XCTAssertTrue(table.waitForExistence(timeout: 5))
+        XCTAssertTrue(table.cells.element(boundBy: 0).waitForExistence(timeout: 30),
+                      "Timed out waiting for at least one Home row — check simulator network / GitHub rate limits.")
     }
 
     @MainActor
-    func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
-        }
+    func testSearch_swift_resultsVisible() throws {
+        let app = XCUIApplication()
+        configureApp(app, resetKeychain: true, mockLoginEntry: false)
+        app.launch()
+
+        app.tabBars.buttons.matching(identifier: A11y.tabSearch).element.tap()
+
+        let searchField = app.searchFields[A11y.searchQueryField]
+        XCTAssertTrue(searchField.waitForExistence(timeout: 5))
+        searchField.tap()
+        searchField.typeText("swift\n")
+
+        let table = app.tables[A11y.searchRepositoryList]
+        XCTAssertTrue(table.waitForExistence(timeout: 5))
+        XCTAssertTrue(table.cells.element(boundBy: 0).waitForExistence(timeout: 30),
+                      "Timed out waiting for Swift search rows — check network / rate limits.")
+    }
+
+    @MainActor
+    func testProfile_guest_showsGitHubLoginButton() throws {
+        let app = XCUIApplication()
+        configureApp(app, resetKeychain: true, mockLoginEntry: false)
+        app.launch()
+
+        app.tabBars.buttons.matching(identifier: A11y.tabProfile).element.tap()
+
+        let loginBtn = app.buttons[A11y.profileLoginGitHub]
+        XCTAssertTrue(loginBtn.waitForExistence(timeout: 8))
+        XCTAssertTrue(loginBtn.isHittable)
+    }
+
+    @MainActor
+    func testMockLogin_profileShowsLogout() throws {
+        let app = XCUIApplication()
+        configureApp(app, resetKeychain: true, mockLoginEntry: true)
+        app.launch()
+
+        app.tabBars.buttons.matching(identifier: A11y.tabProfile).element.tap()
+
+        XCTAssertTrue(app.buttons[A11y.profileLoginGitHub].waitForExistence(timeout: 5))
+        app.buttons[A11y.profileLoginGitHub].tap()
+
+        let mockBtn = app.buttons[A11y.loginMockSignIn]
+        XCTAssertTrue(mockBtn.waitForExistence(timeout: 5))
+        mockBtn.tap()
+
+        XCTAssertTrue(app.buttons[A11y.profileLogout].waitForExistence(timeout: 8))
+    }
+
+    @MainActor
+    func testLogout_returnsToGuestState() throws {
+        let app = XCUIApplication()
+        configureApp(app, resetKeychain: true, mockLoginEntry: true)
+        app.launch()
+
+        app.tabBars.buttons.matching(identifier: A11y.tabProfile).element.tap()
+        app.buttons[A11y.profileLoginGitHub].tap()
+        app.buttons[A11y.loginMockSignIn].tap()
+        XCTAssertTrue(app.buttons[A11y.profileLogout].waitForExistence(timeout: 8))
+
+        app.buttons[A11y.profileLogout].tap()
+
+        // Localized alert copy (zh-Hans is the app default development region).
+        let alert = app.alerts["确认退出登录？"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        alert.buttons["确认"].tap()
+
+        XCTAssertTrue(app.buttons[A11y.profileLoginGitHub].waitForExistence(timeout: 8))
     }
 }

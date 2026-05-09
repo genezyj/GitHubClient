@@ -57,6 +57,10 @@ enum L10n {
     static let repoForks = NSLocalizedString("repo.forks", comment: "Forks label")
     static let repoUpdated = NSLocalizedString("repo.updated", comment: "Updated date label")
 
+    static let detailCreated = NSLocalizedString("detail.created", comment: "Created date label on detail screen")
+    static let detailNoDescription = NSLocalizedString("detail.no_description", comment: "Placeholder when repo description is empty")
+    static let detailOpenOnGitHub = NSLocalizedString("detail.open_on_github", comment: "Open in Safari button on detail screen")
+
     static let profileRepos = NSLocalizedString("profile.repos", comment: "Public repos count label")
     static let profileFollowers = NSLocalizedString("profile.followers", comment: "Followers count label")
     static let profileFollowing = NSLocalizedString("profile.following", comment: "Following count label")

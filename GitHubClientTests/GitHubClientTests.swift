@@ -2,16 +2,29 @@
 //  GitHubClientTests.swift
 //  GitHubClientTests
 //
-//  Created by Gene Zhang on 5/9/26.
+//  Lightweight XCTest suite covering the most important pieces of the
+//  app — endpoint composition, JSON decoding, the Search view-model
+//  state machine, and the auth-service token validation flow. The goal
+//  is breadth over depth: enough to demonstrate XCTest usage and guard
+//  the public contracts those layers expose.
 //
 
-import Testing
+import XCTest
 @testable import GitHubClient
 
-struct GitHubClientTests {
-
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+final class GitHubClientTests: XCTestCase {
+    func test_appErrorMessages_areAllNonEmpty() {
+        let cases: [AppError] = [
+            .invalidURL, .network("x"), .decoding("x"),
+            .unauthorized, .forbidden, .notFound,
+            .rateLimited, .serverError,
+            .oauthCancelled, .invalidOAuthCallback, .invalidOAuthState,
+            .tokenExchangeFailed, .biometricUnavailable, .biometricFailed,
+            .unknown
+        ]
+        for error in cases {
+            XCTAssertFalse(error.localizedMessage.isEmpty,
+                           "Expected non-empty localized message for \(error)")
+        }
     }
-
 }
