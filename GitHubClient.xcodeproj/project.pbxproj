@@ -23,6 +23,21 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXBuildFile section */
+		9C0000012FAF32AB00591A0A /* SnapKit in Frameworks */ = {
+			isa = PBXBuildFile;
+			productRef = 9B0000012FAF32AB00591A0A /* SnapKit */;
+		};
+		9C0000022FAF32AB00591A0A /* Kingfisher in Frameworks */ = {
+			isa = PBXBuildFile;
+			productRef = 9B0000022FAF32AB00591A0A /* Kingfisher */;
+		};
+		9C0000032FAF32AB00591A0A /* KeychainAccess in Frameworks */ = {
+			isa = PBXBuildFile;
+			productRef = 9B0000032FAF32AB00591A0A /* KeychainAccess */;
+		};
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		417F40722FAF32AA00591A0A /* GitHubClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GitHubClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		417F407F2FAF32AB00591A0A /* GitHubClientTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GitHubClientTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -52,6 +67,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9C0000012FAF32AB00591A0A /* SnapKit in Frameworks */,
+				9C0000022FAF32AB00591A0A /* Kingfisher in Frameworks */,
+				9C0000032FAF32AB00591A0A /* KeychainAccess in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +130,9 @@
 			);
 			name = GitHubClient;
 			packageProductDependencies = (
+				9B0000012FAF32AB00591A0A /* SnapKit */,
+				9B0000022FAF32AB00591A0A /* Kingfisher */,
+				9B0000032FAF32AB00591A0A /* KeychainAccess */,
 			);
 			productName = GitHubClient;
 			productReference = 417F40722FAF32AA00591A0A /* GitHubClient.app */;
@@ -196,6 +217,11 @@
 			);
 			mainGroup = 417F40692FAF32AA00591A0A;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				9A0000012FAF32AB00591A0A /* XCRemoteSwiftPackageReference "SnapKit" */,
+				9A0000022FAF32AB00591A0A /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				9A0000032FAF32AB00591A0A /* XCRemoteSwiftPackageReference "KeychainAccess" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 417F40732FAF32AA00591A0A /* Products */;
 			projectDirPath = "";
@@ -268,6 +294,51 @@
 			targetProxy = 417F408A2FAF32AB00591A0A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		9A0000012FAF32AB00591A0A /* XCRemoteSwiftPackageReference "SnapKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SnapKit/SnapKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.7.0;
+			};
+		};
+		9A0000022FAF32AB00591A0A /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
+		9A0000032FAF32AB00591A0A /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.2.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9B0000012FAF32AB00591A0A /* SnapKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9A0000012FAF32AB00591A0A /* XCRemoteSwiftPackageReference "SnapKit" */;
+			productName = SnapKit;
+		};
+		9B0000022FAF32AB00591A0A /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9A0000022FAF32AB00591A0A /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
+		};
+		9B0000032FAF32AB00591A0A /* KeychainAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9A0000032FAF32AB00591A0A /* XCRemoteSwiftPackageReference "KeychainAccess" */;
+			productName = KeychainAccess;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		417F40912FAF32AB00591A0A /* Debug */ = {
