@@ -51,6 +51,28 @@ final class SearchViewController: UIViewController {
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true
+
+        // Return / “Search” on the keyboard must run the same path as tapping
+        // the Search key — XCTest sometimes delivers `\n`, which triggers
+        // `.editingDidEndOnExit` rather than `searchBarSearchButtonClicked`.
+        let field = searchController.searchBar.searchTextField
+        field.returnKeyType = .search
+        field.enablesReturnKeyAutomatically = false
+        field.delegate = self
+    }
+
+    /// Submits whatever is in the search field (Search key on keyboard / Return / XCTest `\n`).
+    /// Re-entrancy-safe when `commitSearchFromBar()` also calls `resignFirstResponder()`.
+    private var isCommittingSearch = false
+    private func commitSearchFromBar() {
+        guard !isCommittingSearch else { return }
+        isCommittingSearch = true
+        defer { isCommittingSearch = false }
+        let bar = searchController.searchBar
+        let text = bar.text ?? ""
+        lastQuery = text
+        viewModel.search(query: text)
+        bar.resignFirstResponder()
     }
 
     private func setupViews() {
@@ -131,16 +153,28 @@ final class SearchViewController: UIViewController {
         }
 
         let allOverlays = [loadingView, errorStateView, initialEmptyView, noResultsView]
+        func setTableHiddenForOverlayStates(_ hidden: Bool) {
+            // Under XCUITest the table carries `accessibilityIdentifier` for
+            // searches; hiding it removes it from the accessibility tree until
+            // results load — `waitForExistence` flakes. Keeping it in the tree
+            // (overlays still cover it visually) keeps UI tests deterministic.
+            if UITestingConfiguration.isRunningUITests {
+                tableView.isHidden = false
+            } else {
+                tableView.isHidden = hidden
+            }
+        }
+
         switch state {
         case .idle:
             repositories = []
             tableView.reloadData()
-            tableView.isHidden = true
+            setTableHiddenForOverlayStates(true)
             allOverlays.forEach { $0.isHidden = true }
             initialEmptyView.isHidden = false
         case .loading:
             if repositories.isEmpty {
-                tableView.isHidden = true
+                setTableHiddenForOverlayStates(true)
                 allOverlays.forEach { $0.isHidden = true }
                 loadingView.isHidden = false
             }
@@ -152,12 +186,12 @@ final class SearchViewController: UIViewController {
         case .empty:
             repositories = []
             tableView.reloadData()
-            tableView.isHidden = true
+            setTableHiddenForOverlayStates(true)
             allOverlays.forEach { $0.isHidden = true }
             noResultsView.isHidden = false
         case .error(let appError):
             if repositories.isEmpty {
-                tableView.isHidden = true
+                setTableHiddenForOverlayStates(true)
                 allOverlays.forEach { $0.isHidden = true }
                 errorStateView.configure(title: L10n.errorTitle, message: appError.localizedMessage)
                 errorStateView.isHidden = false
@@ -166,12 +200,17 @@ final class SearchViewController: UIViewController {
     }
 }
 
+extension SearchViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        guard textField === searchController.searchBar.searchTextField else { return true }
+        commitSearchFromBar()
+        return true
+    }
+}
+
 extension SearchViewController: UISearchBarDelegate {
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        let text = searchBar.text ?? ""
-        lastQuery = text
-        viewModel.search(query: text)
-        searchBar.resignFirstResponder()
+        commitSearchFromBar()
     }
 
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {

@@ -35,6 +35,18 @@ final class GitHubClientUITests: XCTestCase {
         if mockLoginEntry { app.launchArguments.append("-uitesting_mock_login") }
     }
 
+    /// Taps the keyboard’s search/return affordance — labels vary by OS language.
+    private func tapKeyboardSubmitSearch(_ app: XCUIApplication) {
+        let candidates = ["搜索", "Search", "Go", "続行"]
+        for label in candidates {
+            let key = app.keyboards.buttons[label]
+            if key.waitForExistence(timeout: 1), key.isHittable {
+                key.tap()
+                return
+            }
+        }
+    }
+
     @MainActor
     func testLaunch_withoutLogin_homeListVisible() throws {
         let app = XCUIApplication()
@@ -56,14 +68,22 @@ final class GitHubClientUITests: XCTestCase {
         app.tabBars.buttons.matching(identifier: A11y.tabSearch).element.tap()
 
         let searchField = app.searchFields[A11y.searchQueryField]
-        XCTAssertTrue(searchField.waitForExistence(timeout: 5))
+        XCTAssertTrue(searchField.waitForExistence(timeout: 8), "Search field missing — check UISearchBar / accessibility id wiring.")
         searchField.tap()
-        searchField.typeText("swift\n")
+        searchField.typeText("swift")
+        if app.keyboards.element(boundBy: 0).waitForExistence(timeout: 1.5) {
+            tapKeyboardSubmitSearch(app)
+        } else {
+            // Simulator uses a hardware keyboard; Return still triggers `-editingDidEndOnExit`
+            searchField.typeText("\n")
+        }
 
         let table = app.tables[A11y.searchRepositoryList]
-        XCTAssertTrue(table.waitForExistence(timeout: 5))
-        XCTAssertTrue(table.cells.element(boundBy: 0).waitForExistence(timeout: 30),
-                      "Timed out waiting for Swift search rows — check network / rate limits.")
+        let firstRow = table.cells.element(boundBy: 0)
+        XCTAssertTrue(
+            firstRow.waitForExistence(timeout: 45),
+            "Timed out waiting for the first Swift search row — GitHub API, rate limits, or hardware keyboard Simulation can hide the software keyboard."
+        )
     }
 
     @MainActor

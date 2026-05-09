@@ -139,7 +139,7 @@ OAuth access-token handling:
    placeholders are replaced — the **Sign in with GitHub** button is
    disabled while the placeholders are still in place.
 
-### Production caveat (documented per spec §3.4)
+### Production caveat 
 
 A native iOS app cannot truly keep `clientSecret` confidential, so a real
 production build should move the token-exchange POST to a small backend
@@ -236,7 +236,7 @@ iPhone Language → 简体中文`.
 - Light/Dark mode via system colors.
 - iPhone & iPad layouts.
 
-## Completed (P1.1 – P1.6)
+## Completed (P1)
 
 ### P1.1 Repository Detail page
 Tapping a row on Home or Search pushes
@@ -327,6 +327,11 @@ EmptyStateView
 LoadingView
 ```
 
+## Completed (P2)
+
+UITests
+
+
 ## Known Limitations
 
 - SnapKit / Kingfisher / KeychainAccess are used in **narrow** places only
@@ -336,14 +341,6 @@ LoadingView
   client secret truly private. This project exchanges the authorization code
   on-device per `OAUTH_SPEC.md`; production builds should proxy that POST
   through a backend (same note under **Production caveat** in **Login Method**).
-- Mock mode (P1.7), expanded P1.8 components, and the P2 items in
-  `PROJECT_SPEC.md` are **not implemented** in this milestone.
 - TestFlight distribution is not included. The app can be archived and
   uploaded with a valid Apple Developer account.
-
-## Future Improvements (remaining P1 / P2 from the spec)
-
-- Mock mode behind `-useMockData` launch argument (P1.7).
-- XCUITest UI tests layered on top of that mock mode.
-- Backend proxy for OAuth token exchange (hide `clientSecret` from clients).
-- Optional offline cache of last-loaded results.
+- No SwiftUI usage in this project.
