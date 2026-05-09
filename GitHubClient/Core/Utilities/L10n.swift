@@ -26,6 +26,10 @@ enum L10n {
     static let profileLogout = NSLocalizedString("profile.logout", comment: "Logout button")
     static let profileLogoutConfirmTitle = NSLocalizedString("profile.logout_confirm_title", comment: "Logout confirmation alert title")
     static let profileLogoutConfirmMessage = NSLocalizedString("profile.logout_confirm_message", comment: "Logout confirmation alert message")
+    /// Ends the on-screen session but keeps Keychain token for Face ID / Touch ID.
+    static let profileLogoutSignOutOnly = NSLocalizedString("profile.logout_sign_out_only", comment: "Sign out locally but keep saved token")
+    /// Deletes Keychain token so biometric re-login is no longer available.
+    static let profileLogoutRemoveCredentials = NSLocalizedString("profile.logout_remove_credentials", comment: "Sign out and delete saved token")
     static let profileLoginHint = NSLocalizedString("profile.login_hint", comment: "Hint shown to guest users")
 
     static let loginTitle = NSLocalizedString("login.title", comment: "Login screen title")

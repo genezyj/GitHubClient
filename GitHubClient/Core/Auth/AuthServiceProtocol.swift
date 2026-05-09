@@ -20,5 +20,11 @@ protocol AuthServiceProtocol: AnyObject {
     func loginWithGitHub(presentationAnchor: ASPresentationAnchor) async throws -> GitHubUser
 
     func restoreSession() async throws -> GitHubUser?
+
+    /// Ends the in-app session but keeps the OAuth token in Keychain so the user can
+    /// sign back in with Face ID / Touch ID without repeating OAuth.
     func logout() throws
+
+    /// Deletes the saved token from Keychain and clears the session (no biometric re-entry).
+    func revokeStoredLogin() throws
 }

@@ -19,10 +19,12 @@ final class AuthServiceTests: XCTestCase {
         let user = GitHubUser.fixture(login: "octocat")
         service.userResult = .success(user)
 
+        let gate = SessionTokenGate(storage: storage)
         let auth = AuthService(
             service: service,
             storage: storage,
-            oauthService: StubOAuthService()
+            oauthService: StubOAuthService(),
+            sessionTokenGate: gate
         )
 
         let restored = try await auth.restoreSession()
@@ -34,10 +36,13 @@ final class AuthServiceTests: XCTestCase {
     }
 
     func test_restoreSession_withNoStoredToken_returnsNil() async throws {
+        let storage = InMemorySecureStorage(initialToken: nil)
+        let gate = SessionTokenGate(storage: storage)
         let auth = AuthService(
             service: MockGitHubService(),
-            storage: InMemorySecureStorage(initialToken: nil),
-            oauthService: StubOAuthService()
+            storage: storage,
+            oauthService: StubOAuthService(),
+            sessionTokenGate: gate
         )
 
         let restored = try await auth.restoreSession()
@@ -51,10 +56,12 @@ final class AuthServiceTests: XCTestCase {
         let service = MockGitHubService()
         service.userResult = .failure(AppError.unauthorized)
 
+        let gate = SessionTokenGate(storage: storage)
         let auth = AuthService(
             service: service,
             storage: storage,
-            oauthService: StubOAuthService()
+            oauthService: StubOAuthService(),
+            sessionTokenGate: gate
         )
 
         do {
@@ -68,15 +75,17 @@ final class AuthServiceTests: XCTestCase {
         XCTAssertFalse(auth.isLoggedIn)
     }
 
-    func test_logout_clearsTokenAndCurrentUser() async throws {
+    func test_logout_clearsSessionButKeepsStoredToken() async throws {
         let storage = InMemorySecureStorage(initialToken: "stored-token")
         let service = MockGitHubService()
         service.userResult = .success(.fixture())
 
+        let gate = SessionTokenGate(storage: storage)
         let auth = AuthService(
             service: service,
             storage: storage,
-            oauthService: StubOAuthService()
+            oauthService: StubOAuthService(),
+            sessionTokenGate: gate
         )
         _ = try await auth.restoreSession()
         XCTAssertTrue(auth.isLoggedIn)
@@ -85,6 +94,30 @@ final class AuthServiceTests: XCTestCase {
 
         XCTAssertFalse(auth.isLoggedIn)
         XCTAssertNil(auth.currentUser)
+        XCTAssertEqual(storage.storedToken, "stored-token")
+        XCTAssertTrue(auth.hasStoredToken)
+    }
+
+    func test_revokeStoredLogin_clearsTokenAndSession() async throws {
+        let storage = InMemorySecureStorage(initialToken: "stored-token")
+        let service = MockGitHubService()
+        service.userResult = .success(.fixture())
+
+        let gate = SessionTokenGate(storage: storage)
+        let auth = AuthService(
+            service: service,
+            storage: storage,
+            oauthService: StubOAuthService(),
+            sessionTokenGate: gate
+        )
+        _ = try await auth.restoreSession()
+        XCTAssertTrue(auth.isLoggedIn)
+
+        try auth.revokeStoredLogin()
+
+        XCTAssertFalse(auth.isLoggedIn)
+        XCTAssertNil(auth.currentUser)
         XCTAssertNil(storage.storedToken)
+        XCTAssertFalse(auth.hasStoredToken)
     }
 }

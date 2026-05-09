@@ -114,10 +114,10 @@ OAuth access-token handling:
 - Sent as `Authorization: Bearer <token>` on authenticated requests.
 - **Never** stored in `UserDefaults`, logged to the console, printed in
   headers, or hardcoded in source.
-- Logout deletes the token from the Keychain and clears the in-memory
-  session. As noted in `OAUTH_SPEC.md`, logout does **not** clear GitHub's
-  own browser cookies — that's standard OAuth behavior for
-  `ASWebAuthenticationSession`.
+- **退出登录** ends the in-app session but **keeps** the OAuth token in Keychain
+  so the user can return with Face ID / Touch ID. **退出并移除已保存的登录** in
+  the same alert deletes the Keychain token. GitHub’s own browser cookies are
+  unchanged (see `OAUTH_SPEC.md` / `ASWebAuthenticationSession`).
 
 ### Reviewer setup (one-time, ~2 minutes)
 
@@ -195,9 +195,11 @@ To exercise the full flow (after completing the OAuth setup above):
 3. Approve the app. You're returned to GitHubClient and the Profile screen
    updates to your authenticated GitHub user. The OAuth token is stored in
    the Keychain.
-4. Tap `退出登录` to log out. Re-open Profile → `使用 Face ID / Touch ID 登录`
-   to restore the logged-in state from the saved token without going
-   through the OAuth flow again.
+4. Tap `退出登录` on the Profile screen, then in the alert choose **`退出登录`**
+   (sign out locally but keep the saved token). The Profile tab shows guest
+   state; `使用 Face ID / Touch ID 登录` restores the session from Keychain
+   without repeating OAuth. Use **`退出并移除已保存的登录`** when you want to
+   remove the token from this device as well.
 
 ## Localization
 

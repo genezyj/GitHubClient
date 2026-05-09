@@ -133,7 +133,8 @@ final class GitHubClientUITests: XCTestCase {
         // Localized alert copy (zh-Hans is the app default development region).
         let alert = app.alerts["确认退出登录？"]
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
-        alert.buttons["确认"].tap()
+        // Primary action: sign out locally but keep Keychain token (Face ID / Touch ID path).
+        alert.buttons["退出登录"].tap()
 
         XCTAssertTrue(app.buttons[A11y.profileLoginGitHub].waitForExistence(timeout: 8))
     }

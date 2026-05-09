@@ -19,7 +19,9 @@
 "profile.login_with_biometrics" = "使用 Face ID / Touch ID 登录";
 "profile.logout" = "退出登录";
 "profile.logout_confirm_title" = "确认退出登录？";
-"profile.logout_confirm_message" = "退出后仍可继续浏览公开内容。";
+"profile.logout_confirm_message" = "退出后仍可浏览公开内容。登录令牌会保留在本机，可使用 Face ID / Touch ID 再次登录。如需同时从本机删除已保存的登录信息，请选择下方选项。";
+"profile.logout_sign_out_only" = "退出登录";
+"profile.logout_remove_credentials" = "退出并移除已保存的登录";
 "profile.login_hint" = "登录后可查看你的 GitHub 个人资料。";
 "profile.repos" = "公开仓库";
 "profile.followers" = "粉丝";

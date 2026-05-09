@@ -22,10 +22,19 @@ final class AppCoordinator {
 
     private init() {
         let storage = KeychainSecureStorage()
+        let sessionTokenGate = SessionTokenGate(storage: storage)
         let client = APIClient()
-        let github = GitHubService(client: client, tokenProvider: { try? storage.readToken() })
+        let github = GitHubService(
+            client: client,
+            tokenProvider: { sessionTokenGate.accessTokenIfSessionActive() }
+        )
         let oauth = OAuthService()
-        let auth = AuthService(service: github, storage: storage, oauthService: oauth)
+        let auth = AuthService(
+            service: github,
+            storage: storage,
+            oauthService: oauth,
+            sessionTokenGate: sessionTokenGate
+        )
 
         self.secureStorage = storage
         self.apiClient = client

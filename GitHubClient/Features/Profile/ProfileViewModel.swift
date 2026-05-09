@@ -62,7 +62,16 @@ final class ProfileViewModel {
         do {
             try authService.logout()
         } catch {
-            // Even if storage fails to clear, drop the in-memory session by refreshing.
+            // Even if posting notifications fails, refresh UI.
+        }
+        refresh()
+    }
+
+    /// Deletes the Keychain token; use when the user should not be able to use biometrics to return.
+    func revokeStoredLogin() {
+        do {
+            try authService.revokeStoredLogin()
+        } catch {
         }
         refresh()
     }

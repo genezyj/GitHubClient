@@ -290,8 +290,11 @@ final class ProfileViewController: UIViewController {
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: L10n.commonCancel, style: .cancel))
-        alert.addAction(UIAlertAction(title: L10n.commonConfirm, style: .destructive) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: L10n.profileLogoutSignOutOnly, style: .default) { [weak self] _ in
             self?.viewModel.logout()
+        })
+        alert.addAction(UIAlertAction(title: L10n.profileLogoutRemoveCredentials, style: .destructive) { [weak self] _ in
+            self?.viewModel.revokeStoredLogin()
         })
         present(alert, animated: true)
     }

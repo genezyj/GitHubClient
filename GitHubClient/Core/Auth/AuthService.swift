@@ -12,17 +12,25 @@ final class AuthService: AuthServiceProtocol {
     private let service: GitHubServiceProtocol
     private let storage: SecureStorageProtocol
     private let oauthService: OAuthServiceProtocol
+    private let sessionTokenGate: SessionTokenGate
 
     private(set) var currentUser: GitHubUser?
 
     init(
         service: GitHubServiceProtocol,
         storage: SecureStorageProtocol,
-        oauthService: OAuthServiceProtocol
+        oauthService: OAuthServiceProtocol,
+        sessionTokenGate: SessionTokenGate
     ) {
         self.service = service
         self.storage = storage
         self.oauthService = oauthService
+        self.sessionTokenGate = sessionTokenGate
+        syncSessionGate()
+    }
+
+    private func syncSessionGate() {
+        sessionTokenGate.setSessionActive(currentUser != nil)
     }
 
     var isLoggedIn: Bool { currentUser != nil }
@@ -47,6 +55,7 @@ final class AuthService: AuthServiceProtocol {
         }
         try storage.saveToken(token)
         currentUser = user
+        syncSessionGate()
         NotificationCenter.default.post(name: .authStateDidChange, object: nil)
         return user
     }
@@ -57,13 +66,21 @@ final class AuthService: AuthServiceProtocol {
         guard let token = try storage.readToken() else { return nil }
         let user = try await service.fetchAuthenticatedUser(token: token)
         currentUser = user
+        syncSessionGate()
         NotificationCenter.default.post(name: .authStateDidChange, object: nil)
         return user
     }
 
     func logout() throws {
+        currentUser = nil
+        syncSessionGate()
+        NotificationCenter.default.post(name: .authStateDidChange, object: nil)
+    }
+
+    func revokeStoredLogin() throws {
         try storage.deleteToken()
         currentUser = nil
+        syncSessionGate()
         NotificationCenter.default.post(name: .authStateDidChange, object: nil)
     }
 }
@@ -84,6 +101,7 @@ extension AuthService {
         let user = try UITestingConfiguration.makeMockGitHubUser()
         try storage.saveToken(UITestingConfiguration.mockAccessToken)
         currentUser = user
+        syncSessionGate()
         NotificationCenter.default.post(name: .authStateDidChange, object: nil)
     }
 }
