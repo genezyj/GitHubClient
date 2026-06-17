@@ -24,6 +24,18 @@ final class APIClient: APIClientProtocol {
     }
 
     func request<T: Decodable>(_ endpoint: Endpoint, token: String?) async throws -> T {
+        let data = try await requestData(endpoint, token: token)
+        if T.self == EmptyResponse.self, data.isEmpty {
+            return EmptyResponse() as! T
+        }
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            throw AppError.decoding(String(describing: error))
+        }
+    }
+
+    func requestData(_ endpoint: Endpoint, token: String?) async throws -> Data {
         guard var components = URLComponents(url: baseURL.appendingPathComponent(endpoint.path), resolvingAgainstBaseURL: false) else {
             throw AppError.invalidURL
         }
@@ -34,7 +46,8 @@ final class APIClient: APIClientProtocol {
 
         var request = URLRequest(url: url)
         request.httpMethod = endpoint.method.rawValue
-        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.cachePolicy = endpoint.cachePolicy
+        request.setValue(endpoint.acceptHeader, forHTTPHeaderField: "Accept")
         request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
         if let token, !token.isEmpty {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -54,11 +67,7 @@ final class APIClient: APIClientProtocol {
 
         switch http.statusCode {
         case 200...299:
-            do {
-                return try decoder.decode(T.self, from: data)
-            } catch {
-                throw AppError.decoding(String(describing: error))
-            }
+            return data
         case 401:
             throw AppError.unauthorized
         case 403:

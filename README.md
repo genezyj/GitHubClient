@@ -13,6 +13,10 @@ components, secure token storage, and testable networking/authentication flows.
 - Browse popular Swift repositories without signing in
 - Search GitHub repositories by keyword
 - View repository details, topics, stars, forks, open issues, and owner info
+- Star and unstar repositories with the authenticated GitHub account
+- Track starred repositories from the Profile tab
+- Browse repository folders and files
+- Preview Markdown/README files as GitHub-rendered HTML, plus text/code and images
 - Open repositories in GitHub with `SFSafariViewController`
 - Sign in with GitHub via OAuth Authorization Code + PKCE
 - View the authenticated GitHub profile with `GET /user`
@@ -75,6 +79,11 @@ feature state and service calls, exposing a single `ViewState<Value>` to the
 UI. Networking, GitHub API access, OAuth, secure storage, and biometrics all sit
 behind protocols so they can be tested with mocks.
 
+Repository browsing uses GitHub's contents API. Directory rows are sorted with
+folders first, then files alphabetically. Markdown files request GitHub-rendered
+HTML and display it in `WKWebView` with app-provided responsive CSS; external
+links open in `SFSafariViewController`.
+
 The scene manifest and OAuth URL scheme are configured in
 `SupportingFiles/GitHubClient-Info.plist`. The app registers the custom URL
 scheme `githubclient` for the redirect URL:
@@ -104,6 +113,11 @@ OAuth is handled by `GitHubClient/Core/Auth/OAuthService.swift`:
 Access tokens are sent as `Authorization: Bearer <token>` only for
 authenticated requests. They are not stored in `UserDefaults`, printed in logs,
 or hardcoded in source.
+
+The OAuth scope is `read:user user:email public_repo`: profile/email access plus
+permission to star and unstar public repositories. If a token was saved before
+the starring feature was added, GitHub may reject star calls with `401` or
+`403`; remove the saved login and sign in again to grant the expanded scope.
 
 ### GitHub OAuth App Setup
 
@@ -194,6 +208,9 @@ Focused unit-test files include:
 
 - `EndpointTests`
 - `GitHubRepositoryDecodingTests`
+- `RepositoryContentTests`
+- `RepositoryBrowserViewModelTests`
+- `ProfileViewModelStarredTests`
 - `SearchViewModelTests`
 - `AuthServiceTests`
 - `KeychainSecureStorageTests`
@@ -219,9 +236,10 @@ Settings -> General -> Language & Region -> iPhone Language -> 简体中文
   client secret.
 - The OAuth token exchange happens on-device for simplicity. A production app
   should move this exchange to a backend.
-- The app currently focuses on repository browsing, search, details, and
-  profile display; repository creation, issue management, starring, and other
-  write actions are not implemented.
+- Repository browsing is focused on public repositories. Private repository
+  browsing is not included in this version.
+- Repository creation, issue management, and other write actions beyond
+  starring are not implemented.
 - TestFlight distribution and release signing setup are not included.
 - The UI is UIKit-only; there is no SwiftUI implementation in this project.
 
@@ -240,6 +258,10 @@ MVVM ViewModel、可复用 UI 组件、安全令牌存储，以及可测试的�
 - 未登录状态下浏览热门 Swift 仓库
 - 按关键词搜索 GitHub 仓库
 - 查看仓库详情、topics、star、fork、open issues 和作者信息
+- 使用已登录的 GitHub 账号 Star / 取消 Star 仓库
+- 在个人页查看并打开 Starred 仓库列表
+- 浏览仓库目录、文件夹和文件
+- 使用 GitHub 渲染后的 HTML 预览 Markdown / README，并支持文本、代码和图片预览
 - 使用 `SFSafariViewController` 打开 GitHub 原始页面
 - 通过 OAuth Authorization Code + PKCE 登录 GitHub
 - 登录后通过 `GET /user` 展示个人资料
@@ -293,6 +315,10 @@ ViewController 负责视图搭建、状态绑定和导航。ViewModel 负责功�
 并向 UI 暴露统一的 `ViewState<Value>`。网络、GitHub API、OAuth、安全存储和生物
 识别都通过协议注入，方便使用 mock 进行测试。
 
+仓库浏览使用 GitHub contents API。目录中会先展示文件夹，再按名称展示文件。
+Markdown 文件会请求 GitHub 渲染后的 HTML，并在 `WKWebView` 中使用 App 自己的
+响应式 CSS 展示；外部链接会通过 `SFSafariViewController` 打开。
+
 Scene 配置和 OAuth URL scheme 位于 `SupportingFiles/GitHubClient-Info.plist`。
 应用注册的回调地址为：
 
@@ -324,6 +350,10 @@ githubclient://oauth/callback
 
 占位符未替换前，登录页会禁用 GitHub 登录按钮。
 
+OAuth scope 为 `read:user user:email public_repo`：读取个人资料、邮箱，并允许
+Star / 取消 Star 公开仓库。如果设备里已经保存了旧版本 token，GitHub 可能会对
+Star 请求返回 `401` 或 `403`；此时需要移除已保存的登录信息并重新登录，以授权新 scope。
+
 ### 生产环境说明
 
 原生 iOS 应用无法真正保护 client secret。生产应用应将 authorization code 换 token
@@ -350,8 +380,9 @@ githubclient://oauth/callback
 
 ## 测试
 
-单元测试覆盖 endpoint 生成、JSON 解码、搜索 ViewModel 状态、登录会话恢复、退出
-登录行为和 Keychain 存储。UI 测试覆盖主要启动流程。
+单元测试覆盖 endpoint 生成、JSON 解码、搜索 ViewModel 状态、仓库内容模型、仓库浏览
+ViewModel、个人页 Starred 仓库状态、登录会话恢复、退出登录行为和 Keychain 存储。UI
+测试覆盖主要启动流程。
 
 可在 Xcode 中使用 `Command-U` 运行，也可以使用命令行：
 
@@ -366,7 +397,7 @@ xcodebuild -project GitHubClient.xcodeproj \
 
 - GitHub 登录需要本地配置 OAuth App 的 Client ID 和 client secret。
 - 为了让项目自包含，OAuth token exchange 目前在客户端完成；生产环境应移到后端。
-- 当前功能集中在仓库浏览、搜索、详情和个人资料展示，尚未实现创建仓库、issue 管理、
-  star 等写操作。
+- 仓库文件浏览的首版聚焦公开仓库，暂不包含私有仓库浏览。
+- 除 Star / 取消 Star 外，尚未实现创建仓库、issue 管理等其他写操作。
 - 未包含 TestFlight 分发和正式发布签名配置。
 - 当前项目仅使用 UIKit，没有 SwiftUI 版本。

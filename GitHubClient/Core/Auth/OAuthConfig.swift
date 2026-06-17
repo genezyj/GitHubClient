@@ -32,8 +32,8 @@ enum OAuthConfig {
     /// `ASWebAuthenticationSession`.
     static let callbackScheme = "githubclient"
 
-    /// Minimal scope per spec — public profile + primary email only.
-    static let scope = "read:user user:email"
+    /// Public profile + primary email + starring public repositories.
+    static let scope = "read:user user:email public_repo"
 
     static let authorizeURL = URL(string: "https://github.com/login/oauth/authorize")!
     static let accessTokenURL = URL(string: "https://github.com/login/oauth/access_token")!

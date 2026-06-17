@@ -15,22 +15,33 @@ final class ProfileViewModel {
 
     private let authService: AuthServiceProtocol
     private let biometricAuth: BiometricAuthProtocol
+    private let service: GitHubServiceProtocol
+    private var starredTask: Task<Void, Never>?
 
     private(set) var state: ViewState<Mode> = .idle {
         didSet { onStateChange?(state) }
     }
 
-    var onStateChange: ((ViewState<Mode>) -> Void)?
+    private(set) var starredState: ViewState<[GitHubRepository]> = .idle {
+        didSet { onStarredStateChange?(starredState) }
+    }
 
-    init(authService: AuthServiceProtocol, biometricAuth: BiometricAuthProtocol) {
+    var onStateChange: ((ViewState<Mode>) -> Void)?
+    var onStarredStateChange: ((ViewState<[GitHubRepository]>) -> Void)?
+
+    init(authService: AuthServiceProtocol, biometricAuth: BiometricAuthProtocol, service: GitHubServiceProtocol) {
         self.authService = authService
         self.biometricAuth = biometricAuth
+        self.service = service
     }
 
     func refresh() {
         if let user = authService.currentUser {
             state = .loaded(.loggedIn(user))
+            loadStarredRepositories()
         } else {
+            starredTask?.cancel()
+            starredState = .idle
             let canBiometric = biometricAuth.canEvaluateBiometrics() && authService.hasStoredToken
             state = .loaded(.guest(canUseBiometrics: canBiometric))
         }
@@ -46,6 +57,7 @@ final class ProfileViewModel {
                 let user = try await self.authService.restoreSession()
                 if let user {
                     self.state = .loaded(.loggedIn(user))
+                    self.loadStarredRepositories()
                 } else {
                     self.refresh()
                 }
@@ -64,6 +76,8 @@ final class ProfileViewModel {
         } catch {
             // Even if posting notifications fails, refresh UI.
         }
+        starredTask?.cancel()
+        starredState = .idle
         refresh()
     }
 
@@ -73,6 +87,28 @@ final class ProfileViewModel {
             try authService.revokeStoredLogin()
         } catch {
         }
+        starredTask?.cancel()
+        starredState = .idle
         refresh()
+    }
+
+    func loadStarredRepositories() {
+        guard authService.isLoggedIn else {
+            starredState = .idle
+            return
+        }
+        starredTask?.cancel()
+        starredState = .loading
+        starredTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let repos = try await self.service.fetchStarredRepositories(page: 1)
+                if Task.isCancelled { return }
+                self.starredState = repos.isEmpty ? .empty : .loaded(repos)
+            } catch {
+                if Task.isCancelled { return }
+                self.starredState = .error((error as? AppError) ?? .unknown)
+            }
+        }
     }
 }

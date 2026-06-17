@@ -18,10 +18,20 @@ final class MockGitHubService: GitHubServiceProtocol, @unchecked Sendable {
     var searchResult: Result<[GitHubRepository], Error> = .success([])
     var userResult: Result<GitHubUser, Error> = .failure(AppError.unauthorized)
     var repositoryResult: Result<GitHubRepository, Error> = .failure(AppError.notFound)
+    var starredRepositoriesResult: Result<[GitHubRepository], Error> = .success([])
+    var isStarredResult: Result<Bool, Error> = .success(false)
+    var starResult: Result<Void, Error> = .success(())
+    var unstarResult: Result<Void, Error> = .success(())
+    var contentsResult: Result<[RepositoryContent], Error> = .success([])
+    var fileResult: Result<RepositoryContent, Error> = .failure(AppError.notFound)
+    var renderedHTMLResult: Result<String, Error> = .success("<p>Hello</p>")
 
     private(set) var lastSearchQuery: String?
     private(set) var lastSearchPage: Int?
     private(set) var lastTokenUsedForUser: String?
+    private(set) var lastContentsPath: String?
+    private(set) var didStarRepository = false
+    private(set) var didUnstarRepository = false
 
     func fetchPopularSwiftRepositories(page: Int) async throws -> [GitHubRepository] {
         try popularResult.get()
@@ -40,6 +50,39 @@ final class MockGitHubService: GitHubServiceProtocol, @unchecked Sendable {
 
     func fetchRepository(owner: String, repo: String) async throws -> GitHubRepository {
         try repositoryResult.get()
+    }
+
+    func fetchStarredRepositories(page: Int) async throws -> [GitHubRepository] {
+        try starredRepositoriesResult.get()
+    }
+
+    func isRepositoryStarred(owner: String, repo: String) async throws -> Bool {
+        try isStarredResult.get()
+    }
+
+    func starRepository(owner: String, repo: String) async throws {
+        didStarRepository = true
+        try starResult.get()
+    }
+
+    func unstarRepository(owner: String, repo: String) async throws {
+        didUnstarRepository = true
+        try unstarResult.get()
+    }
+
+    func fetchRepositoryContents(owner: String, repo: String, path: String) async throws -> [RepositoryContent] {
+        lastContentsPath = path
+        return try contentsResult.get()
+    }
+
+    func fetchRepositoryFile(owner: String, repo: String, path: String) async throws -> RepositoryContent {
+        lastContentsPath = path
+        return try fileResult.get()
+    }
+
+    func fetchRenderedMarkdownHTML(owner: String, repo: String, path: String) async throws -> String {
+        lastContentsPath = path
+        return try renderedHTMLResult.get()
     }
 }
 
@@ -63,6 +106,14 @@ final class StubOAuthService: OAuthServiceProtocol, @unchecked Sendable {
     func authenticate(presentationAnchor: ASPresentationAnchor) async throws -> String {
         throw AppError.oauthCancelled
     }
+}
+
+struct StubBiometricAuth: BiometricAuthProtocol {
+    var canEvaluate = false
+    var authenticateResult = true
+
+    func canEvaluateBiometrics() -> Bool { canEvaluate }
+    func authenticate(reason: String) async throws -> Bool { authenticateResult }
 }
 
 extension GitHubUser {
@@ -115,6 +166,33 @@ extension GitHubRepository {
         """
         let data = Data(json.utf8)
         return try! JSONDecoder.gitHub.decode(GitHubRepository.self, from: data)
+    }
+}
+
+extension RepositoryContent {
+    static func fixture(
+        name: String = "README.md",
+        path: String = "README.md",
+        type: String = "file",
+        size: Int? = 12,
+        content: String? = nil,
+        encoding: String? = nil
+    ) -> RepositoryContent {
+        let json = """
+        {
+            "name": "\(name)",
+            "path": "\(path)",
+            "sha": "abc123",
+            "size": \(size ?? 0),
+            "type": "\(type)",
+            "download_url": "https://raw.githubusercontent.com/apple/swift/main/\(path)",
+            "html_url": "https://github.com/apple/swift/blob/main/\(path)",
+            "content": \(content.map { "\"\($0)\"" } ?? "null"),
+            "encoding": \(encoding.map { "\"\($0)\"" } ?? "null")
+        }
+        """
+        let data = Data(json.utf8)
+        return try! JSONDecoder.gitHub.decode(RepositoryContent.self, from: data)
     }
 }
 

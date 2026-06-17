@@ -42,6 +42,7 @@ enum L10n {
     static let commonCancel = NSLocalizedString("common.cancel", comment: "Cancel button")
     static let commonConfirm = NSLocalizedString("common.confirm", comment: "Confirm button")
     static let commonOK = NSLocalizedString("common.ok", comment: "OK button")
+    static let commonLoading = NSLocalizedString("common.loading", comment: "Loading text")
 
     static let errorTitle = NSLocalizedString("error.title", comment: "Error state title")
     static let errorNetwork = NSLocalizedString("error.network", comment: "Network failure message")
@@ -68,4 +69,19 @@ enum L10n {
     static let profileRepos = NSLocalizedString("profile.repos", comment: "Public repos count label")
     static let profileFollowers = NSLocalizedString("profile.followers", comment: "Followers count label")
     static let profileFollowing = NSLocalizedString("profile.following", comment: "Following count label")
+    static let profileStarredRepositories = NSLocalizedString("profile.starred_repositories", comment: "Starred repositories section title")
+    static let profileNoStarredRepositories = NSLocalizedString("profile.no_starred_repositories", comment: "No starred repositories profile message")
+
+    static let repoBrowserRoot = NSLocalizedString("repo_browser.root", comment: "Repository browser root folder title")
+    static let repoBrowserEmpty = NSLocalizedString("repo_browser.empty", comment: "Repository browser empty folder message")
+    static let repoBrowserFolder = NSLocalizedString("repo_browser.folder", comment: "Repository browser folder item subtitle")
+    static let repoBrowserFile = NSLocalizedString("repo_browser.file", comment: "Repository browser file item subtitle")
+    static let repoBrowserUnsupportedItem = NSLocalizedString("repo_browser.unsupported_item", comment: "Repository browser unsupported item subtitle")
+
+    static let starLoginRequiredTitle = NSLocalizedString("star.login_required_title", comment: "Star login alert title")
+    static let starLoginRequiredMessage = NSLocalizedString("star.login_required_message", comment: "Star login alert message")
+
+    static func fileUnsupportedPreview(_ filename: String) -> String {
+        return String(format: NSLocalizedString("file.unsupported_preview", comment: "Unsupported file preview message"), filename)
+    }
 }

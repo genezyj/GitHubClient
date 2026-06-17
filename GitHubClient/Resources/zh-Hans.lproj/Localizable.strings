@@ -26,6 +26,8 @@
 "profile.repos" = "公开仓库";
 "profile.followers" = "粉丝";
 "profile.following" = "关注中";
+"profile.starred_repositories" = "Starred 仓库";
+"profile.no_starred_repositories" = "暂无 Starred 仓库";
 
 "login.title" = "登录 GitHub";
 "login.headline" = "使用你的 GitHub 账号登录";
@@ -37,6 +39,7 @@
 "common.cancel" = "取消";
 "common.confirm" = "确认";
 "common.ok" = "好";
+"common.loading" = "加载中…";
 
 "error.title" = "出现问题";
 "error.network" = "网络连接失败，请稍后重试";
@@ -59,3 +62,14 @@
 "detail.created" = "创建";
 "detail.no_description" = "暂无简介";
 "detail.open_on_github" = "在 GitHub 中打开";
+
+"repo_browser.root" = "仓库文件";
+"repo_browser.empty" = "这个文件夹为空";
+"repo_browser.folder" = "文件夹";
+"repo_browser.file" = "文件";
+"repo_browser.unsupported_item" = "暂不支持预览";
+
+"star.login_required_title" = "需要登录";
+"star.login_required_message" = "登录 GitHub 后才能 Star 或取消 Star 仓库。";
+
+"file.unsupported_preview" = "暂不支持预览“%@”。";

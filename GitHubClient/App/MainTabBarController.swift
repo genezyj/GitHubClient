@@ -49,8 +49,8 @@ final class MainTabBarController: UITabBarController {
         let vc = HomeViewController(viewModel: viewModel)
         vc.title = L10n.homeTitle
         let nav = UINavigationController(rootViewController: vc)
-        vc.onSelectRepository = { [weak nav, gitHubService] repo in
-            nav?.pushViewController(Self.makeDetailVC(for: repo, service: gitHubService), animated: true)
+        vc.onSelectRepository = { [weak nav, gitHubService, authService] repo in
+            nav?.pushViewController(Self.makeDetailVC(for: repo, service: gitHubService, authService: authService), animated: true)
         }
         nav.tabBarItem = UITabBarItem(
             title: L10n.tabHome,
@@ -66,8 +66,8 @@ final class MainTabBarController: UITabBarController {
         let vc = SearchViewController(viewModel: viewModel)
         vc.title = L10n.searchTitle
         let nav = UINavigationController(rootViewController: vc)
-        vc.onSelectRepository = { [weak nav, gitHubService] repo in
-            nav?.pushViewController(Self.makeDetailVC(for: repo, service: gitHubService), animated: true)
+        vc.onSelectRepository = { [weak nav, gitHubService, authService] repo in
+            nav?.pushViewController(Self.makeDetailVC(for: repo, service: gitHubService, authService: authService), animated: true)
         }
         nav.tabBarItem = UITabBarItem(
             title: L10n.tabSearch,
@@ -80,16 +80,18 @@ final class MainTabBarController: UITabBarController {
 
     private static func makeDetailVC(
         for repository: GitHubRepository,
-        service: GitHubServiceProtocol
+        service: GitHubServiceProtocol,
+        authService: AuthServiceProtocol
     ) -> RepositoryDetailViewController {
         let vm = RepositoryDetailViewModel(repository: repository, service: service)
-        return RepositoryDetailViewController(viewModel: vm)
+        return RepositoryDetailViewController(viewModel: vm, authService: authService)
     }
 
     private func makeProfileTab() -> UINavigationController {
         let viewModel = ProfileViewModel(
             authService: authService,
-            biometricAuth: biometricAuth
+            biometricAuth: biometricAuth,
+            service: gitHubService
         )
         let vc = ProfileViewController(
             viewModel: viewModel,
@@ -97,6 +99,9 @@ final class MainTabBarController: UITabBarController {
         )
         vc.title = L10n.profileTab
         let nav = UINavigationController(rootViewController: vc)
+        vc.onSelectRepository = { [weak nav, gitHubService, authService] repo in
+            nav?.pushViewController(Self.makeDetailVC(for: repo, service: gitHubService, authService: authService), animated: true)
+        }
         nav.tabBarItem = UITabBarItem(
             title: L10n.profileTab,
             image: UIImage(systemName: "person.crop.circle"),

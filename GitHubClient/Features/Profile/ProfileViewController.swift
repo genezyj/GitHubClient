@@ -9,11 +9,13 @@ final class ProfileViewController: UIViewController {
 
     private let viewModel: ProfileViewModel
     private let authService: AuthServiceProtocol
+    var onSelectRepository: ((GitHubRepository) -> Void)?
 
     private let scrollView = UIScrollView()
     private let contentStack = UIStackView()
     private let contentContainer = UIView()
     private let loadingView = LoadingView()
+    private let refreshControl = UIRefreshControl()
 
     private let avatarView = AvatarImageView()
     private let nameLabel = UILabel()
@@ -25,6 +27,9 @@ final class ProfileViewController: UIViewController {
     private let secondaryButton: UIButton = makeFilledButton(title: "", tinted: true)
     private let logoutButton: UIButton = makeFilledButton(title: "", destructive: true)
     private let hintLabel = UILabel()
+    private let starredTitleLabel = UILabel()
+    private let starredStatusLabel = UILabel()
+    private let starredStack = UIStackView()
 
     init(viewModel: ProfileViewModel, authService: AuthServiceProtocol) {
         self.viewModel = viewModel
@@ -51,6 +56,12 @@ final class ProfileViewController: UIViewController {
             name: .authStateDidChange,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleStarredRepositoriesChange),
+            name: .starredRepositoriesDidChange,
+            object: nil
+        )
 
         // Best-effort silent restore: if a token exists, try to refresh `currentUser`
         // in the background. UI defaults to guest state and updates if it succeeds.
@@ -72,10 +83,16 @@ final class ProfileViewController: UIViewController {
         viewModel.refresh()
     }
 
+    @objc private func handleStarredRepositoriesChange() {
+        viewModel.loadStarredRepositories()
+    }
+
     // MARK: Layout
 
     private func setupViews() {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.refreshControl = refreshControl
+        refreshControl.addTarget(self, action: #selector(didPullToRefresh), for: .valueChanged)
         view.addSubview(scrollView)
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -86,14 +103,21 @@ final class ProfileViewController: UIViewController {
 
         contentContainer.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(contentContainer)
-        // Constrain content to a max width on iPad while filling iPhone width.
+        // Fill the visible width on iPhone, cap at 700pt on iPad. The equal-width
+        // preference sits just below `.required` so it beats the subviews' content
+        // compression resistance (`.defaultHigh`) — otherwise the two tie and the
+        // layout is ambiguous, intermittently resolving to an over-wide container
+        // that gets centered and clipped on both edges (wide starred-repo cards
+        // clipped the "Starred 仓库" title and card descriptions). A *required*
+        // upper bound guarantees the content can never overflow sideways.
         let widthConstraint = contentContainer.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
-        widthConstraint.priority = .defaultHigh
+        widthConstraint.priority = .required - 1
         NSLayoutConstraint.activate([
             contentContainer.topAnchor.constraint(equalTo: scrollView.topAnchor),
             contentContainer.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentContainer.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
             widthConstraint,
+            contentContainer.widthAnchor.constraint(lessThanOrEqualTo: scrollView.widthAnchor),
             contentContainer.widthAnchor.constraint(lessThanOrEqualToConstant: 700)
         ])
 
@@ -134,6 +158,23 @@ final class ProfileViewController: UIViewController {
         hintLabel.numberOfLines = 0
         hintLabel.textAlignment = .center
 
+        starredTitleLabel.font = .preferredFont(forTextStyle: .headline)
+        starredTitleLabel.textColor = .label
+        starredTitleLabel.textAlignment = .left
+        starredTitleLabel.text = L10n.profileStarredRepositories
+        starredTitleLabel.isHidden = true
+
+        starredStatusLabel.font = .preferredFont(forTextStyle: .footnote)
+        starredStatusLabel.textColor = .secondaryLabel
+        starredStatusLabel.numberOfLines = 0
+        starredStatusLabel.textAlignment = .center
+        starredStatusLabel.isHidden = true
+
+        starredStack.axis = .vertical
+        starredStack.spacing = 10
+        starredStack.alignment = .fill
+        starredStack.isHidden = true
+
         statsRow.axis = .horizontal
         statsRow.spacing = 16
         statsRow.alignment = .center
@@ -147,8 +188,16 @@ final class ProfileViewController: UIViewController {
         secondaryButton.addTarget(self, action: #selector(didTapSecondary), for: .touchUpInside)
         logoutButton.addTarget(self, action: #selector(didTapLogout), for: .touchUpInside)
 
-        for view in [avatarView, nameLabel, usernameLabel, bioLabel, metaStack, statsRow, primaryButton, secondaryButton, logoutButton, hintLabel] {
+        for view in [avatarView, nameLabel, usernameLabel, bioLabel, metaStack, statsRow, primaryButton, secondaryButton, logoutButton, hintLabel, starredTitleLabel, starredStatusLabel, starredStack] {
             contentStack.addArrangedSubview(view)
+        }
+
+        for view in [starredTitleLabel, starredStatusLabel, starredStack] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                view.leadingAnchor.constraint(equalTo: contentStack.leadingAnchor),
+                view.trailingAnchor.constraint(equalTo: contentStack.trailingAnchor)
+            ])
         }
 
         // Buttons span the inner width.
@@ -176,6 +225,13 @@ final class ProfileViewController: UIViewController {
         viewModel.onStateChange = { [weak self] state in
             self?.render(state)
         }
+        viewModel.onStarredStateChange = { [weak self] state in
+            self?.renderStarredRepositories(state)
+        }
+    }
+
+    @objc private func didPullToRefresh() {
+        viewModel.refresh()
     }
 
     // MARK: Render
@@ -184,15 +240,19 @@ final class ProfileViewController: UIViewController {
         switch state {
         case .idle:
             loadingView.isHidden = true
+            refreshControl.endRefreshing()
         case .loading:
             loadingView.isHidden = false
         case .empty:
             loadingView.isHidden = true
+            refreshControl.endRefreshing()
         case .error(let appError):
             loadingView.isHidden = true
+            refreshControl.endRefreshing()
             presentErrorAlert(message: appError.localizedMessage)
         case .loaded(let mode):
             loadingView.isHidden = true
+            refreshControl.endRefreshing()
             switch mode {
             case .guest(let canUseBiometrics):
                 renderGuest(canUseBiometrics: canUseBiometrics)
@@ -227,6 +287,7 @@ final class ProfileViewController: UIViewController {
         logoutButton.isHidden = true
         hintLabel.text = L10n.profileLoginHint
         hintLabel.isHidden = false
+        renderStarredRepositories(.idle)
     }
 
     private func renderLoggedIn(user: GitHubUser) {
@@ -262,6 +323,41 @@ final class ProfileViewController: UIViewController {
             primaryButton.accessibilityIdentifier = nil
         }
         hintLabel.isHidden = true
+    }
+
+    private func renderStarredRepositories(_ state: ViewState<[GitHubRepository]>) {
+        starredStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        guard authService.isLoggedIn else {
+            starredTitleLabel.isHidden = true
+            starredStatusLabel.isHidden = true
+            starredStack.isHidden = true
+            return
+        }
+
+        starredTitleLabel.isHidden = false
+        switch state {
+        case .idle:
+            starredStatusLabel.isHidden = true
+            starredStack.isHidden = true
+        case .loading:
+            starredStatusLabel.text = L10n.commonLoading
+            starredStatusLabel.isHidden = false
+            starredStack.isHidden = true
+        case .empty:
+            starredStatusLabel.text = L10n.profileNoStarredRepositories
+            starredStatusLabel.isHidden = false
+            starredStack.isHidden = true
+        case .error(let appError):
+            starredStatusLabel.text = appError.localizedMessage
+            starredStatusLabel.isHidden = false
+            starredStack.addArrangedSubview(makeStarredRetryButton())
+            starredStack.isHidden = false
+        case .loaded(let repos):
+            starredStatusLabel.isHidden = true
+            repos.forEach { starredStack.addArrangedSubview(makeStarredRow(for: $0)) }
+            starredStack.isHidden = repos.isEmpty
+        }
     }
 
     // MARK: Actions
@@ -339,6 +435,24 @@ final class ProfileViewController: UIViewController {
         return label
     }
 
+    private func makeStarredRow(for repo: GitHubRepository) -> UIControl {
+        let row = RepositoryCardControl()
+        row.configure(with: repo)
+        row.addAction(UIAction { [weak self] _ in
+            self?.onSelectRepository?(repo)
+        }, for: .touchUpInside)
+        return row
+    }
+
+    private func makeStarredRetryButton() -> UIButton {
+        let button = UIButton(type: .system)
+        button.setTitle(L10n.errorRetry, for: .normal)
+        button.addAction(UIAction { [weak self] _ in
+            self?.viewModel.loadStarredRepositories()
+        }, for: .touchUpInside)
+        return button
+    }
+
     private static func makeFilledButton(title: String, tinted: Bool = false, destructive: Bool = false) -> UIButton {
         if #available(iOS 15.0, *) {
             var config: UIButton.Configuration = tinted ? .tinted() : .filled()
@@ -356,5 +470,30 @@ final class ProfileViewController: UIViewController {
             button.layer.cornerRadius = 10
             return button
         }
+    }
+}
+
+private final class RepositoryCardControl: UIControl {
+    private let card = RepositoryCardView()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.isUserInteractionEnabled = false
+        addSubview(card)
+        NSLayoutConstraint.activate([
+            card.topAnchor.constraint(equalTo: topAnchor),
+            card.leadingAnchor.constraint(equalTo: leadingAnchor),
+            card.trailingAnchor.constraint(equalTo: trailingAnchor),
+            card.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func configure(with repo: GitHubRepository) {
+        card.configure(with: repo)
+        accessibilityLabel = repo.fullName
     }
 }
